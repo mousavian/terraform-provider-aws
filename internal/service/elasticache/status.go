@@ -147,3 +147,19 @@ func StatusUser(ctx context.Context, conn *elasticache.ElastiCache, userId strin
 		return user, aws.StringValue(user.Status), nil
 	}
 }
+
+func statusReservedCacheNode(ctx context.Context, conn *elasticache.ElastiCache, id string) resource.StateRefreshFunc {
+	return func() (interface{}, string, error) {
+		output, err := FindReservedCacheNodeByID(ctx, conn, id)
+
+		if tfresource.NotFound(err) {
+			return nil, "", nil
+		}
+
+		if err != nil {
+			return nil, "", err
+		}
+
+		return output, aws.StringValue(output.State), nil
+	}
+}

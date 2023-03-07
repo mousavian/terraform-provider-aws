@@ -262,3 +262,21 @@ func WaitUserDeleted(ctx context.Context, conn *elasticache.ElastiCache, userId 
 
 	return err
 }
+
+func waitReservedCacheNodeCreated(ctx context.Context, conn *elasticache.ElastiCache, id string, timeout time.Duration) error {
+	stateConf := &resource.StateChangeConf{
+		Pending: []string{
+			ReservedCacheNodeStatePaymentPending,
+		},
+		Target:         []string{ReservedCacheNodeStateActive},
+		Refresh:        statusReservedCacheNode(ctx, conn, id),
+		NotFoundChecks: 5,
+		Timeout:        timeout,
+		MinTimeout:     10 * time.Second,
+		Delay:          30 * time.Second,
+	}
+
+	_, err := stateConf.WaitForStateContext(ctx)
+
+	return err
+}

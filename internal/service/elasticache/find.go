@@ -337,3 +337,32 @@ func FindCacheSubnetGroupByName(ctx context.Context, conn *elasticache.ElastiCac
 
 	return output.CacheSubnetGroups[0], nil
 }
+
+func FindReservedCacheNodeByID(ctx context.Context, conn *elasticache.ElastiCache, id string) (*elasticache.ReservedCacheNode, error) {
+	input := &elasticache.DescribeReservedCacheNodesInput{
+		ReservedCacheNodeId: aws.String(id),
+	}
+
+	output, err := conn.DescribeReservedCacheNodesWithContext(ctx, input)
+
+	if tfawserr.ErrCodeEquals(err, elasticache.ErrCodeReservedCacheNodeNotFoundFault) {
+		return nil, &resource.NotFoundError{
+			LastError:   err,
+			LastRequest: input,
+		}
+	}
+
+	if err != nil {
+		return nil, err
+	}
+
+	if output == nil || len(output.ReservedCacheNodes) == 0 || output.ReservedCacheNodes[0] == nil {
+		return nil, tfresource.NewEmptyResultError(input)
+	}
+
+	if count := len(output.ReservedCacheNodes); count > 1 {
+		return nil, tfresource.NewTooManyResultsError(count, input)
+	}
+
+	return output.ReservedCacheNodes[0], nil
+}
